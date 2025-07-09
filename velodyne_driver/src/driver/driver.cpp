@@ -59,7 +59,7 @@ VelodyneDriver::VelodyneDriver(const rclcpp::NodeOptions & options)
   diagnostics_(this, 0.2)
 {
   std::string devip = this->declare_parameter("device_ip", std::string(""));
-  bool gps_time = this->declare_parameter("gps_time", false);
+  gps_time_ = this->declare_parameter("gps_time", true);
 
   rcl_interfaces::msg::ParameterDescriptor offset_desc;
   offset_desc.name = "time_offset";
@@ -176,12 +176,21 @@ VelodyneDriver::VelodyneDriver(const rclcpp::NodeOptions & options)
       dump_file, read_once, read_fast, repeat_delay);
   } else {
     // read data from live socket
-    input_ = std::make_unique<velodyne_driver::InputSocket>(this, devip, udp_port, gps_time);
+    input_ = std::make_unique<velodyne_driver::InputSocket>(this, devip, udp_port, gps_time_);
   }
 
   // raw packet output topic
   output_ =
     this->create_publisher<velodyne_msgs::msg::VelodyneScan>("velodyne_packets", 10);
+
+  // time ref pubs
+  microsec_lidar_pub_ = this->create_publisher<sensor_msgs::msg::TimeReference>("velodyne/usec",10);
+  uncrrcted_t_ros2_pub_ = this->create_publisher<sensor_msgs::msg::TimeReference>("velodyne/uncorrected_ros2",10);
+  // time ref msgs
+  microsec_lidar_msg_.header.frame_id = "softsync";
+  microsec_lidar_msg_.source = "vlp16";
+  uncrrcted_t_ros2_msg_.header.frame_id = "naivesync";
+  uncrrcted_t_ros2_msg_.source = "ros2";
 
   last_azimuth_ = -1;
 
@@ -259,6 +268,18 @@ bool VelodyneDriver::poll()
         // keep reading until full packet received
         int rc = input_->getPacket(&scan->packets[i], config_.time_offset);
         if (rc == 0) {  // got a full packet?
+          if(gps_time_){
+            microsec_lidar_msg_.header.stamp = input_->t_gps_;
+            uncrrcted_t_ros2_msg_.header.stamp = input_->t_gps_;
+
+            microsec_lidar_msg_.time_ref.set__sec(-1);    
+            microsec_lidar_msg_.time_ref.set__nanosec(input_->usec_cnt_);    
+
+            uncrrcted_t_ros2_msg_.time_ref = input_->t_ros2_;
+
+            microsec_lidar_pub_->publish(microsec_lidar_msg_);
+            uncrrcted_t_ros2_pub_->publish(uncrrcted_t_ros2_msg_);
+          }
           break;
         }
 

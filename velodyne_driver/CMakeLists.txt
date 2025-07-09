@@ -16,6 +16,8 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(velodyne_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 
 # libpcap provides no pkg-config or find_package module:
 set(libpcap_LIBRARIES -lpcap)
@@ -35,12 +37,16 @@ target_link_libraries(velodyne_input PUBLIC
 add_library(velodyne_driver SHARED src/driver/driver.cpp)
 target_include_directories(velodyne_driver PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  ${std_msgs_INCLUDE_DIRS}
+  ${sensor_msgs_INCLUDE_DIRS})
+
 target_link_libraries(velodyne_driver PUBLIC
   diagnostic_updater::diagnostic_updater
   rclcpp::rclcpp
   velodyne_input
   ${velodyne_msgs_TARGETS}
+  sensor_msgs::sensor_msgs__rosidl_typesupport_cpp
 )
 target_link_libraries(velodyne_driver PRIVATE
   rclcpp_components::component
@@ -89,6 +95,8 @@ ament_export_targets(velodyne_driver)
 ament_export_dependencies(
   diagnostic_updater
   rclcpp
+  sensor_msgs
+  std_msgs
   velodyne_msgs
 )
 

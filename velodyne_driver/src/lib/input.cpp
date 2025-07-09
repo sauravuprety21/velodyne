@@ -244,15 +244,25 @@ int InputSocket::getPacket(velodyne_msgs::msg::VelodynePacket * pkt, const doubl
   }
 
   rclcpp::Time time2 = private_nh_->get_clock()->now();
+  usec_packet_ = &(pkt->data[1200]);
+  usec_cnt_ =
+      static_cast<uint32_t>(((uint32_t) usec_packet_[3]) << 24 |
+        ((uint32_t) usec_packet_[2]) << 16 |
+        ((uint32_t) usec_packet_[1]) << 8 |
+        ((uint32_t) usec_packet_[0]));
+
+  t_ros2_ = rclcpp::Time((time2.nanoseconds() + time1.nanoseconds()) / 2.0 + time_offset);
+  t_gps_ =   rosTimeFromGpsTimestamp(time2, &(pkt->data[1200]));
+  
   if (!gps_time_) {
     // Average the times at which we begin and end reading.  Use that to
     // estimate when the scan occurred. Add the time offset.
-    pkt->stamp = rclcpp::Time((time2.nanoseconds() + time1.nanoseconds()) / 2.0 + time_offset);
+    pkt->stamp = t_ros2_;
   } else {
     // time for each packet is a 4 byte uint located starting at offset 1200 in
     // the data packet
     // TODO(clalancette): What if the packet is shorter than 1204 bytes?
-    pkt->stamp = rosTimeFromGpsTimestamp(time2, &(pkt->data[1200]));
+    pkt->stamp = t_gps_;
   }
 
   return 0;

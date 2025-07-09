@@ -86,6 +86,11 @@ public:
   virtual int getPacket(
     velodyne_msgs::msg::VelodynePacket * pkt,
     const double time_offset) = 0;
+  
+  uint8_t *usec_packet_; // usec packet
+  uint32_t usec_cnt_;      // usec counter    
+  rclcpp::Time t_ros2_; // packet ros2 time
+  rclcpp::Time t_gps_; // packet gps time
 
 protected:
   rclcpp::Node * private_nh_;

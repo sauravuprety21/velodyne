@@ -41,6 +41,7 @@
 #include <diagnostic_updater/diagnostic_updater.hpp>
 #include <diagnostic_updater/publisher.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/time_reference.hpp>
 
 #include "velodyne_driver/input.hpp"
 
@@ -78,6 +79,14 @@ private:
 
   std::unique_ptr<Input> input_;
   rclcpp::Publisher<velodyne_msgs::msg::VelodyneScan>::SharedPtr output_;
+
+  rclcpp::Publisher<sensor_msgs::msg::TimeReference>::SharedPtr  microsec_lidar_pub_; // usec counter pub
+  rclcpp::Publisher<sensor_msgs::msg::TimeReference>::SharedPtr  uncrrcted_t_ros2_pub_; // uncorrected ros2 time pub
+  sensor_msgs::msg::TimeReference microsec_lidar_msg_;
+  sensor_msgs::msg::TimeReference uncrrcted_t_ros2_msg_;  
+
+  bool gps_time_;
+  
   int last_azimuth_;
 
   /* diagnostics updater */
