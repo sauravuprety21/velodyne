@@ -49,14 +49,16 @@ inline
 rclcpp::Time resolveHourAmbiguity(const rclcpp::Time & stamp, const rclcpp::Time & nominal_stamp)
 {
   const int HALFHOUR_TO_SEC = 1800;
+  const uint64_t HALFHOUR_TO_NANOSEC = 1800000000000;
+
   rclcpp::Time retval = stamp;
 
   if (nominal_stamp.seconds() > stamp.seconds()) {
     if (nominal_stamp.seconds() - stamp.seconds() > HALFHOUR_TO_SEC) {
-      retval = rclcpp::Time(retval.seconds() + 2 * HALFHOUR_TO_SEC);
+      retval = rclcpp::Time(retval.nanoseconds() + 2 * HALFHOUR_TO_NANOSEC);
     }
   } else if (stamp.seconds() - nominal_stamp.seconds() > HALFHOUR_TO_SEC) {
-    retval = rclcpp::Time(retval.seconds() - 2 * HALFHOUR_TO_SEC);
+    retval = rclcpp::Time(retval.nanoseconds() - 2 * HALFHOUR_TO_NANOSEC);
   }
 
   return retval;
